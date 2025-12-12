@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Microsoft Rewards Auto Search",
+  "version": "1.0",
+  "description": "Anti-detection Bing search automation for Microsoft Rewards",
+  "permissions": ["tabs", "scripting", "storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Microsoft Rewards"
+  }
+}

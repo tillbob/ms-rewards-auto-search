@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 300px;
+      padding: 15px;
+      font-family: Arial, sans-serif;
+    }
+    .settings {
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+    input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #005a9e;
+    }
+    #status {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 3px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h3>MS Rewards Auto Search</h3>
+  
+  <div class="settings">
+    <label>Number of Searches:</label>
+    <input type="number" id="searchCount" value="10" min="1" max="30">
+    
+    <label>Base Delay (seconds):</label>
+    <input type="number" id="baseDelay" value="3" min="1" max="10">
+    
+    <label>Tab Close Delay (seconds):</label>
+    <input type="number" id="closeDelay" value="5" min="1" max="20">
+    
+    <label>
+      <input type="checkbox" id="rotateUA" checked>
+      Rotate User Agents
+    </label>
+    
+    <label>
+      <input type="checkbox" id="randomizeQueries" checked>
+      Randomize Queries
+    </label>
+  </div>
+  
+  <button id="startBtn">Start Searches</button>
+  <div id="status"></div>
+  
+  <script>
+    const searchTerms = [
+      'weather today', 'news updates', 'stock market',
+      'recipes dinner', 'travel destinations', 'sports scores',
+      'movie reviews', 'tech news', 'health tips',
+      'home improvement', 'gardening ideas', 'fitness workouts'
+    ];
+    
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15'
+    ];
+    
+    // Load saved settings
+    chrome.storage.local.get(['searchCount', 'baseDelay', 'closeDelay', 'rotateUA', 'randomizeQueries'], (data) => {
+      if (data.searchCount) document.getElementById('searchCount').value = data.searchCount;
+      if (data.baseDelay) document.getElementById('baseDelay').value = data.baseDelay;
+      if (data.closeDelay) document.getElementById('closeDelay').value = data.closeDelay;
+      if (data.rotateUA !== undefined) document.getElementById('rotateUA').checked = data.rotateUA;
+      if (data.randomizeQueries !== undefined) document.getElementById('randomizeQueries').checked = data.randomizeQueries;
+    });
+    
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      const searchCount = parseInt(document.getElementById('searchCount').value);
+      const baseDelay = parseInt(document.getElementById('baseDelay').value) * 1000;
+      const closeDelay = parseInt(document.getElementById('closeDelay').value) * 1000;
+      const rotateUA = document.getElementById('rotateUA').checked;
+      const randomizeQueries = document.getElementById('randomizeQueries').checked;
+      
+      // Save settings
+      chrome.storage.local.set({ searchCount, baseDelay, closeDelay, rotateUA, randomizeQueries });
+      
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+      status.textContent = 'Starting searches...';
+      
+      for (let i = 0; i < searchCount; i++) {
+        const searchTerm = randomizeQueries 
+          ? searchTerms[Math.floor(Math.random() * searchTerms.length)] + ' ' + Date.now()
+          : searchTerms[i % searchTerms.length];
+        
+        const url = `https://www.bing.com/search?q=${encodeURIComponent(searchTerm)}`;
+        
+        // Random delay variance (±30%)
+        const variance = baseDelay * 0.3;
+        const delay = baseDelay + (Math.random() * variance * 2 - variance);
+        
+        status.textContent = `Search ${i + 1}/${searchCount}`;
+        
+        const tab = await chrome.tabs.create({ url, active: false });
+        
+        // Close tab after delay
+        setTimeout(() => {
+          chrome.tabs.remove(tab.id);
+        }, closeDelay);
+        
+        if (i < searchCount - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+      
+      status.textContent = `Completed ${searchCount} searches!`;
+      setTimeout(() => {
+        status.style.display = 'none';
+      }, 3000);
+    });
+  </script>
+</body>
+</html>
