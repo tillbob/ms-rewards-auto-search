@@ -3,7 +3,8 @@
   "name": "Microsoft Rewards Auto Search",
   "version": "1.0",
   "description": "Anti-detection Bing search automation for Microsoft Rewards",
-  "permissions": ["tabs", "scripting", "storage"],
+  "permissions": ["tabs", "storage"],
+  "host_permissions": ["https://www.bing.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Microsoft Rewards"
